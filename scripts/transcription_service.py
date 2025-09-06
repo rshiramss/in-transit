@@ -226,7 +226,7 @@ def main():
         service = ElevenLabsTranscriptionService()
         
         # Example: Transcribe a video file
-        video_path = "../media/videoplayback.mp4"  # Replace with your video file path
+        video_path = "../media/GreekFinCrisis.mp4"  # Replace with your video file path
         if os.path.exists(video_path):
             print(f"Transcribing video: {video_path}")
             result = service.transcribe_video(video_path)

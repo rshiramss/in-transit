@@ -29,8 +29,8 @@ class TranscriptProcessor:
             else:
                 raise ValueError("Gemini API key not provided. Set GEMINI_API_KEY environment variable or pass api_key parameter.")
         
-        # Use the cheapest available model
-        self.model = genai.GenerativeModel('gemini-1.5-flash-8b')  # Cheapest option
+        # Use Gemini 2.5 Flash - latest model with better performance
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
         
     def _make_api_call_with_retry(self, prompt: str, max_retries: int = 3) -> str:
         """Make API call with retry logic for quota limits."""
@@ -321,12 +321,57 @@ class TranscriptProcessor:
         return output_file
     
     def _write_srt_file(self, entries: List[Dict], output_file: str):
-        """Write entries to SRT format file."""
+        """Write entries to SRT format file with transition markers for time gaps."""
         with open(output_file, 'w', encoding='utf-8') as file:
-            for i, entry in enumerate(entries, 1):
-                file.write(f"{i}\n")
+            subtitle_counter = 1
+            
+            for i, entry in enumerate(entries):
+                # Check for significant time gap with previous entry
+                if i > 0:
+                    prev_end_time = self._srt_time_to_seconds(entries[i-1]['end_time'])
+                    curr_start_time = self._srt_time_to_seconds(entry['start_time'])
+                    time_gap = curr_start_time - prev_end_time
+                    
+                    # If gap is more than 30 seconds, add a transition marker
+                    if time_gap > 30:
+                        # Add transition marker subtitle
+                        file.write(f"{subtitle_counter}\n")
+                        
+                        # Use previous end time + 1 second for transition start
+                        transition_start = self._seconds_to_srt_time(prev_end_time + 1)
+                        transition_end = self._seconds_to_srt_time(prev_end_time + 3)
+                        
+                        file.write(f"{transition_start} --> {transition_end}\n")
+                        
+                        # Create descriptive transition text
+                        minutes_skipped = int(time_gap // 60)
+                        if minutes_skipped >= 1:
+                            file.write(f"[...{minutes_skipped} minute{'s' if minutes_skipped != 1 else ''} later...]\n\n")
+                        else:
+                            file.write(f"[...content omitted...]\n\n")
+                        
+                        subtitle_counter += 1
+                
+                # Write the actual subtitle entry
+                file.write(f"{subtitle_counter}\n")
                 file.write(f"{entry['start_time']} --> {entry['end_time']}\n")
                 file.write(f"{entry['text']}\n\n")
+                subtitle_counter += 1
+    
+    def _srt_time_to_seconds(self, srt_time: str) -> float:
+        """Convert SRT time format (HH:MM:SS,mmm) to seconds."""
+        time_part, ms_part = srt_time.split(',')
+        h, m, s = map(int, time_part.split(':'))
+        ms = int(ms_part)
+        return h * 3600 + m * 60 + s + ms / 1000.0
+    
+    def _seconds_to_srt_time(self, seconds: float) -> str:
+        """Convert seconds to SRT time format (HH:MM:SS,mmm)."""
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        millisecs = int((seconds - int(seconds)) * 1000)
+        return f"{hours:02d}:{minutes:02d}:{secs:02d},{millisecs:03d}"
 
 def main():
     """Main function to run the transcript processor."""
