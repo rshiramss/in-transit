@@ -258,13 +258,48 @@ function cycleHeroVideos() {
   let currentIndex = 0;
 
   function switchVideo() {
-    video.src = videoSources[currentIndex];
-    video.load();
-    currentIndex = (currentIndex + 1) % videoSources.length;
+    // Fade out current video
+    video.style.opacity = "0";
+
+    // After fade out completes, switch video
+    setTimeout(() => {
+      video.src = videoSources[currentIndex];
+      video.load();
+      currentIndex = (currentIndex + 1) % videoSources.length;
+
+      // Fade in new video
+      video.style.opacity = "1";
+    }, 300); // 300ms fade transition
   }
 
-  // Switch video every 8 seconds
-  setInterval(switchVideo, 8000);
+  // Handle when video ends - switch to next video
+  function handleVideoEnded() {
+    switchVideo();
+  }
+
+  // Hide play button when video is playing
+  function handleVideoPlay() {
+    const overlay = document.querySelector(".video-overlay");
+    if (overlay) {
+      overlay.style.display = "none";
+    }
+  }
+
+  // Show play button when video is paused
+  function handleVideoPause() {
+    const overlay = document.querySelector(".video-overlay");
+    if (overlay) {
+      overlay.style.display = "flex";
+    }
+  }
+
+  // Add event listeners for video play/pause
+  video.addEventListener("play", handleVideoPlay);
+  video.addEventListener("pause", handleVideoPause);
+  video.addEventListener("ended", handleVideoEnded);
+
+  // Switch video every 15 seconds (increased from 8)
+  setInterval(switchVideo, 15000);
 
   // Initial video load
   video.src = videoSources[0];

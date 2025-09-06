@@ -521,6 +521,7 @@ body {
   height: 100%;
   object-fit: cover;
   border-radius: var(--radius-2xl);
+  transition: opacity 0.3s ease-in-out;
 }
 
 .video-overlay {
