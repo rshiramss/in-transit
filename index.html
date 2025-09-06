@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>In-Transit - Smart Video Summarization</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      @font-face {
+        font-family: "SF Pro Display";
+        src: url("https://sf.abarba.me/SF-Pro-Display-Regular.woff2")
+          format("woff2");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "SF Pro Display";
+        src: url("https://sf.abarba.me/SF-Pro-Display-Medium.woff2")
+          format("woff2");
+        font-weight: 500;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "SF Pro Display";
+        src: url("https://sf.abarba.me/SF-Pro-Display-Semibold.woff2")
+          format("woff2");
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "SF Pro Display";
+        src: url("https://sf.abarba.me/SF-Pro-Display-Bold.woff2")
+          format("woff2");
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <i class="fas fa-video"></i>
+          <span>In-Transit</span>
+        </div>
+        <div class="nav-links">
+          <a href="#home" class="nav-link active">Home</a>
+          <a href="#mission" class="nav-link">Mission</a>
+          <a href="#upload" class="nav-link">Upload</a>
+          <a href="#team" class="nav-link">Team</a>
+        </div>
+        <div class="theme-toggle">
+          <button class="theme-btn" id="themeToggle" title="Switch Theme">
+            <i class="fas fa-sun"></i>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+      <div class="hero-container">
+        <div class="hero-content">
+          <h1 class="hero-title">
+            <span class="title-line">Transform Long Videos</span>
+            <span class="title-line">Into Digestible Content</span>
+          </h1>
+          <p class="hero-subtitle">
+            AI-powered video summarization that identifies and extracts the most
+            important moments, creating shorter, more engaging videos for better
+            consumption.
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" onclick="scrollToSection('upload')">
+              <i class="fas fa-upload"></i>
+              Upload Video
+            </button>
+            <button
+              class="btn btn-secondary"
+              onclick="scrollToSection('mission')"
+            >
+              <i class="fas fa-info-circle"></i>
+              Learn More
+            </button>
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="video-preview">
+            <video id="heroVideo" autoplay muted playsinline class="hero-video">
+              <source
+                src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+                type="video/mp4"
+              />
+              <source
+                src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+                type="video/mp4"
+              />
+              <source
+                src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"
+                type="video/mp4"
+              />
+              Your browser does not support the video tag.
+            </video>
+            <div class="video-overlay">
+              <i class="fas fa-play-circle"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mission Section -->
+    <section id="mission" class="mission">
+      <div class="container">
+        <div class="mission-content">
+          <h2 class="section-title">Our Mission</h2>
+          <div class="mission-grid">
+            <div class="mission-card">
+              <div class="mission-icon">
+                <i class="fas fa-clock"></i>
+              </div>
+              <h3>Save Time</h3>
+              <p>
+                Extract key moments from lengthy videos, reducing watch time by
+                up to 80% while preserving essential information.
+              </p>
+            </div>
+            <div class="mission-card">
+              <div class="mission-icon">
+                <i class="fas fa-brain"></i>
+              </div>
+              <h3>Smart Analysis</h3>
+              <p>
+                Advanced AI algorithms identify important segments based on
+                content analysis, speaker emphasis, and visual cues.
+              </p>
+            </div>
+            <div class="mission-card">
+              <div class="mission-icon">
+                <i class="fas fa-mobile-alt"></i>
+              </div>
+              <h3>Better Consumption</h3>
+              <p>
+                Create bite-sized content perfect for mobile viewing, social
+                media, and quick information absorption.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Upload Section -->
+    <section id="upload" class="upload">
+      <div class="container">
+        <div class="upload-content">
+          <h2 class="section-title">Upload Your Video</h2>
+
+          <!-- Upload Method Toggle -->
+          <div class="upload-methods">
+            <button class="method-toggle active" data-method="file">
+              <i class="fas fa-upload"></i>
+              Upload File
+            </button>
+            <button class="method-toggle" data-method="mp4-url">
+              <i class="fas fa-link"></i>
+              MP4 URL
+            </button>
+          </div>
+
+          <!-- File Upload Area -->
+          <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <h3>Drop your video here</h3>
+            <p>or click to browse files</p>
+            <input type="file" id="videoInput" accept="video/*" hidden />
+            <div class="upload-formats">
+              <span>Supported formats: MP4, MOV, AVI, MKV</span>
+            </div>
+          </div>
+
+          <!-- MP4 URL Input -->
+          <div class="mp4-url-input" id="mp4UrlInput" style="display: none">
+            <div class="input-container">
+              <div class="input-icon">
+                <i class="fas fa-video"></i>
+              </div>
+              <input
+                type="url"
+                id="mp4Url"
+                placeholder="Paste your MP4 video URL here..."
+                class="url-input"
+              />
+              <button class="btn btn-primary" id="processMp4Btn">
+                <i class="fas fa-play"></i>
+                Process Video
+              </button>
+            </div>
+            <div class="url-examples">
+              <p>Examples:</p>
+              <div class="example-links">
+                <span>https://example.com/video.mp4</span>
+                <span>https://cdn.example.com/content/video.mp4</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Processing Status -->
+          <div
+            class="processing-status"
+            id="processingStatus"
+            style="display: none"
+          >
+            <div class="status-header">
+              <i class="fas fa-cog fa-spin"></i>
+              <h3>Processing Your Video</h3>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="status-text" id="statusText">
+              Analyzing video content...
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div class="results" id="results" style="display: none">
+            <div class="results-header">
+              <i class="fas fa-check-circle"></i>
+              <h3>Processing Complete!</h3>
+            </div>
+            <div class="results-content">
+              <div class="video-comparison">
+                <div class="video-item">
+                  <h4>Original Video</h4>
+                  <div class="video-info">
+                    <span class="duration">15:32</span>
+                    <span class="size">245 MB</span>
+                  </div>
+                </div>
+                <div class="arrow">
+                  <i class="fas fa-arrow-right"></i>
+                </div>
+                <div class="video-item">
+                  <h4>Summarized Video</h4>
+                  <div class="video-info">
+                    <span class="duration">3:45</span>
+                    <span class="size">62 MB</span>
+                  </div>
+                </div>
+              </div>
+              <div class="results-actions">
+                <button class="btn btn-primary">
+                  <i class="fas fa-download"></i>
+                  Download Video
+                </button>
+                <button class="btn btn-secondary">
+                  <i class="fas fa-play"></i>
+                  Preview
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MP4 Processing Results -->
+          <div class="mp4-results" id="mp4Results" style="display: none">
+            <div class="mp4-results-header">
+              <div class="loading-animation">
+                <div class="video-loader">
+                  <div class="loader-circle"></div>
+                  <div class="loader-circle"></div>
+                  <div class="loader-circle"></div>
+                </div>
+                <h3>Processing Your Video</h3>
+                <p class="loading-text">Analyzing content and generating summary...</p>
+              </div>
+            </div>
+            
+            <div class="mp4-results-content" id="mp4ResultsContent" style="display: none">
+              <div class="success-header">
+                <i class="fas fa-check-circle"></i>
+                <h3>Video Processing Complete!</h3>
+                <p class="success-subtitle">Your summarized video is ready for download</p>
+              </div>
+              
+              <div class="video-preview-section">
+                <div class="video-preview-container">
+                  <video id="processedVideo" class="processed-video" controls>
+                    <source src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                  </video>
+                  <div class="video-overlay-info">
+                    <div class="video-stats">
+                      <div class="stat-item">
+                        <i class="fas fa-clock"></i>
+                        <span class="stat-label">Duration</span>
+                        <span class="stat-value" id="processedDuration">3:45</span>
+                      </div>
+                      <div class="stat-item">
+                        <i class="fas fa-file-video"></i>
+                        <span class="stat-label">Size</span>
+                        <span class="stat-value" id="processedSize">62 MB</span>
+                      </div>
+                      <div class="stat-item">
+                        <i class="fas fa-compress"></i>
+                        <span class="stat-label">Compression</span>
+                        <span class="stat-value">75%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="download-section">
+                <div class="download-info">
+                  <h4>Download Your Summarized Video</h4>
+                  <p>Click the button below to download your processed video file</p>
+                </div>
+                <div class="download-actions">
+                  <button class="btn btn-primary download-btn" id="downloadBtn">
+                    <i class="fas fa-download"></i>
+                    Download MP4
+                  </button>
+                  <button class="btn btn-secondary" id="processAnotherBtn">
+                    <i class="fas fa-plus"></i>
+                    Process Another Video
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Team Section -->
+    <section id="team" class="team">
+      <div class="container">
+        <div class="team-content">
+          <h2 class="section-title">Meet the Team</h2>
+          <p class="team-subtitle">
+            The passionate developers behind In-Transit, dedicated to
+            revolutionizing video content consumption.
+          </p>
+          <div class="team-grid">
+            <div class="team-member">
+              <div class="member-photo">
+                <img
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face"
+                  alt="Sushanth Rao"
+                />
+              </div>
+              <div class="member-info">
+                <h3>Sushanth Rao</h3>
+                <p class="member-role">Lead Developer</p>
+                <p class="member-bio">
+                  Passionate full-stack developer with expertise in AI
+                  integration and video processing technologies. Focused on
+                  creating seamless user experiences and scalable backend
+                  solutions.
+                </p>
+                <div class="member-links">
+                  <a
+                    href="https://www.linkedin.com/in/sushanth-rao-86b539218/"
+                    target="_blank"
+                    class="social-link"
+                  >
+                    <i class="fab fa-linkedin"></i>
+                    LinkedIn
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="team-member">
+              <div class="member-photo">
+                <img
+                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop&crop=face"
+                  alt="Rishith Shiramshetti"
+                />
+              </div>
+              <div class="member-info">
+                <h3>Rishith Shiramshetti</h3>
+                <p class="member-role">Frontend Developer</p>
+                <p class="member-bio">
+                  Creative frontend developer specializing in modern web
+                  technologies and user interface design. Committed to building
+                  intuitive and responsive applications that users love.
+                </p>
+                <div class="member-links">
+                  <a
+                    href="https://www.linkedin.com/in/rishitshiramshetti/"
+                    target="_blank"
+                    class="social-link"
+                  >
+                    <i class="fab fa-linkedin"></i>
+                    LinkedIn
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div class="team-member">
+              <div class="member-photo">
+                <img
+                  src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop&crop=face"
+                  alt="Krithik Tamilvanan"
+                />
+              </div>
+              <div class="member-info">
+                <h3>Krithik Tamilvanan</h3>
+                <p class="member-role">Backend Developer</p>
+                <p class="member-bio">
+                  Skilled backend developer with deep knowledge in AI/ML
+                  integration and cloud infrastructure. Expert in building
+                  robust APIs and optimizing video processing pipelines.
+                </p>
+                <div class="member-links">
+                  <a
+                    href="https://www.linkedin.com/in/krithik-tamilvanan/"
+                    target="_blank"
+                    class="social-link"
+                  >
+                    <i class="fab fa-linkedin"></i>
+                    LinkedIn
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-logo">
+            <i class="fas fa-video"></i>
+            <span>In-Transit</span>
+          </div>
+          <p>&copy; 2025 In-Transit. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
