@@ -31,24 +31,40 @@ class TranscriptProcessor:
         self.model = genai.GenerativeModel('gemini-1.5-flash')
         
     def parse_transcript(self, file_path: str) -> List[Dict]:
-        """Parse transcript file and extract timestamped content."""
+        """Parse SRT transcript file and extract timestamped content."""
         transcript_entries = []
         
         with open(file_path, 'r', encoding='utf-8') as file:
             content = file.read()
         
-        # Regex pattern to match timestamp format: 00:00:00 - 00:00:03: content
-        pattern = r'(\d{2}:\d{2}:\d{2})\s*-\s*(\d{2}:\d{2}:\d{2}):\s*(.+)'
-        matches = re.findall(pattern, content)
+        # Split content into subtitle blocks
+        blocks = content.strip().split('\n\n')
         
-        for match in matches:
-            start_time, end_time, text = match
-            transcript_entries.append({
-                'start_time': start_time,
-                'end_time': end_time,
-                'text': text.strip(),
-                'original_line': f"{start_time} - {end_time}: {text.strip()}"
-            })
+        for block in blocks:
+            lines = block.strip().split('\n')
+            if len(lines) >= 3:
+                # Skip the subtitle number (first line)
+                # Parse timestamp line (second line)
+                timestamp_line = lines[1]
+                # Parse text content (remaining lines)
+                text_content = '\n'.join(lines[2:])
+                
+                # Parse SRT timestamp format: 00:00:00,000 --> 00:00:03,000
+                timestamp_pattern = r'(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})'
+                match = re.match(timestamp_pattern, timestamp_line)
+                
+                if match:
+                    start_time_srt, end_time_srt = match.groups()
+                    # Convert SRT format to simple format for consistency
+                    start_time = start_time_srt.replace(',', '.')
+                    end_time = end_time_srt.replace(',', '.')
+                    
+                    transcript_entries.append({
+                        'start_time': start_time,
+                        'end_time': end_time,
+                        'text': text_content.strip(),
+                        'original_line': f"{start_time} - {end_time}: {text_content.strip()}"
+                    })
         
         return transcript_entries
     
@@ -151,7 +167,7 @@ class TranscriptProcessor:
     def process_transcript(self, input_file: str, output_file: str = None) -> str:
         """Main method to process transcript and create cleaned version."""
         if output_file is None:
-            output_file = input_file.replace('.txt', '_cleaned.txt')
+            output_file = input_file.replace('.srt', '_cleaned.srt')
         
         print(f"Processing transcript: {input_file}")
         
@@ -172,18 +188,28 @@ class TranscriptProcessor:
         print("Identifying unnecessary content...")
         unnecessary_flags = self.identify_unnecessary_content(transcript_entries, topic)
         
-        # Create cleaned transcript
-        cleaned_lines = []
-        for entry, is_unnecessary in zip(transcript_entries, unnecessary_flags):
-            if is_unnecessary:
-                cleaned_line = f"{entry['start_time']} - {entry['end_time']}: xxx"
-            else:
-                cleaned_line = entry['original_line']
-            cleaned_lines.append(cleaned_line)
+        # Create cleaned SRT transcript
+        cleaned_srt_blocks = []
+        subtitle_number = 1
         
-        # Write cleaned transcript
+        for entry, is_unnecessary in zip(transcript_entries, unnecessary_flags):
+            # Convert back to SRT timestamp format
+            start_srt = entry['start_time'].replace('.', ',')
+            end_srt = entry['end_time'].replace('.', ',')
+            
+            if is_unnecessary:
+                text_content = "xxx"
+            else:
+                text_content = entry['text']
+            
+            # Create SRT block
+            srt_block = f"{subtitle_number}\n{start_srt} --> {end_srt}\n{text_content}"
+            cleaned_srt_blocks.append(srt_block)
+            subtitle_number += 1
+        
+        # Write cleaned SRT transcript
         with open(output_file, 'w', encoding='utf-8') as file:
-            file.write('\n'.join(cleaned_lines))
+            file.write('\n\n'.join(cleaned_srt_blocks))
         
         # Print summary
         unnecessary_count = sum(unnecessary_flags)
@@ -211,9 +237,9 @@ def main():
         return
     
     # Process transcript
-    input_file = "transcribed_text.txt"
+    input_file = "transcript.srt"
     if not os.path.exists(input_file):
-        print(f"Error: {input_file} not found. Please create the transcript file first.")
+        print(f"Error: {input_file} not found. Please create the SRT transcript file first.")
         return
     
     try:
