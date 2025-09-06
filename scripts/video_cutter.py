@@ -2,6 +2,7 @@
 """
 Video Cutter Script
 Cuts MP4 files based on xxx timestamps from cleaned transcript files.
+Handles transition markers like [...1 minute later...] and skips them during processing.
 Processes one cut at a time and creates before/after video files.
 """
 
@@ -19,6 +20,7 @@ class VideoCutter:
         self.transcript_file = transcript_file
         self.video = None
         self.cut_points = []
+        self.transition_markers = []
         
     def load_video(self):
         """Load the video file."""
@@ -29,12 +31,19 @@ class VideoCutter:
         self.video = VideoFileClip(self.video_file)
         print(f"Video loaded successfully. Duration: {self.video.duration:.2f} seconds")
         
+    def is_transition_marker(self, text_content: str) -> bool:
+        """Check if the text content is a transition marker like [...1 minute later...]."""
+        # Pattern to match transition markers
+        transition_pattern = r'\[\.\.\.[^[\]]*(?:minute|second|hour|later|content omitted|omitted)\s*(?:later)?\.\.\.\]'
+        return bool(re.search(transition_pattern, text_content, re.IGNORECASE))
+    
     def parse_xxx_timestamps(self) -> List[Tuple[float, float, int]]:
         """Parse the SRT transcript file to find xxx timestamps and their positions."""
         if not os.path.exists(self.transcript_file):
             raise FileNotFoundError(f"Transcript file not found: {self.transcript_file}")
         
         cut_points = []
+        transition_markers = []
         
         with open(self.transcript_file, 'r', encoding='utf-8') as file:
             content = file.read()
@@ -50,8 +59,21 @@ class VideoCutter:
                 # Parse text content (third line)
                 text_content = lines[2].strip()
                 
+                # Check if this is a transition marker
+                if self.is_transition_marker(text_content):
+                    # Parse SRT timestamp format: 00:00:00,000 --> 00:00:03,000
+                    timestamp_pattern = r'(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})'
+                    match = re.match(timestamp_pattern, timestamp_line)
+                    
+                    if match:
+                        start_time_srt, end_time_srt = match.groups()
+                        start_seconds = self.srt_time_to_seconds(start_time_srt)
+                        end_seconds = self.srt_time_to_seconds(end_time_srt)
+                        transition_markers.append((start_seconds, end_seconds, block_index, text_content))
+                        print(f"Found transition marker: {text_content} at {self.seconds_to_time(start_seconds)}")
+                
                 # Check if this is an xxx segment
-                if text_content == "xxx":
+                elif text_content == "xxx":
                     # Parse SRT timestamp format: 00:00:00,000 --> 00:00:03,000
                     timestamp_pattern = r'(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})'
                     match = re.match(timestamp_pattern, timestamp_line)
@@ -63,11 +85,25 @@ class VideoCutter:
                         end_seconds = self.srt_time_to_seconds(end_time_srt)
                         cut_points.append((start_seconds, end_seconds, block_index))
         
+        # Store transition markers for reference
+        self.transition_markers = transition_markers
+        
+        print(f"Found {len(transition_markers)} transition markers")
         print(f"Found {len(cut_points)} xxx segments to cut:")
         for i, (start, end, block_idx) in enumerate(cut_points):
             print(f"  {i+1}. {self.seconds_to_time(start)} - {self.seconds_to_time(end)} (block {block_idx})")
         
         return cut_points
+    
+    def show_transition_markers(self):
+        """Display all found transition markers."""
+        if not self.transition_markers:
+            print("No transition markers found.")
+            return
+        
+        print(f"\nTransition markers found ({len(self.transition_markers)}):")
+        for i, (start, end, block_idx, text) in enumerate(self.transition_markers):
+            print(f"  {i+1}. {self.seconds_to_time(start)} - {self.seconds_to_time(end)}: {text}")
     
     def time_to_seconds(self, time_str: str) -> float:
         """Convert time string (HH:MM:SS) to seconds."""
@@ -109,7 +145,7 @@ class VideoCutter:
             return False
     
     def find_next_non_xxx_segment(self, current_block_index: int) -> Optional[Tuple[float, float]]:
-        """Find the next non-xxx segment after the current block."""
+        """Find the next non-xxx and non-transition marker segment after the current block."""
         with open(self.transcript_file, 'r', encoding='utf-8') as file:
             content = file.read()
         
@@ -119,7 +155,8 @@ class VideoCutter:
             lines = blocks[i].strip().split('\n')
             if len(lines) >= 3:
                 text_content = lines[2].strip()
-                if text_content != "xxx":
+                # Skip both xxx segments and transition markers
+                if text_content != "xxx" and not self.is_transition_marker(text_content):
                     # Parse timestamp
                     timestamp_line = lines[1]
                     timestamp_pattern = r'(\d{2}:\d{2}:\d{2},\d{3})\s*-->\s*(\d{2}:\d{2}:\d{2},\d{3})'
@@ -253,6 +290,9 @@ def main():
         
         # Parse xxx timestamps
         cutter.cut_points = cutter.parse_xxx_timestamps()
+        
+        # Show transition markers
+        cutter.show_transition_markers()
         
         if not cutter.cut_points:
             print("No xxx segments found in transcript. Nothing to cut.")
