@@ -1,13 +1,20 @@
 // DOM Elements
 const uploadArea = document.getElementById("uploadArea");
 const videoInput = document.getElementById("videoInput");
-const youtubeInput = document.getElementById("youtubeInput");
-const youtubeUrl = document.getElementById("youtubeUrl");
-const processYoutubeBtn = document.getElementById("processYoutubeBtn");
+const mp4UrlInput = document.getElementById("mp4UrlInput");
+const mp4Url = document.getElementById("mp4Url");
+const processMp4Btn = document.getElementById("processMp4Btn");
 const processingStatus = document.getElementById("processingStatus");
 const progressFill = document.getElementById("progressFill");
 const statusText = document.getElementById("statusText");
 const results = document.getElementById("results");
+const mp4Results = document.getElementById("mp4Results");
+const mp4ResultsContent = document.getElementById("mp4ResultsContent");
+const processedVideo = document.getElementById("processedVideo");
+const processedDuration = document.getElementById("processedDuration");
+const processedSize = document.getElementById("processedSize");
+const downloadBtn = document.getElementById("downloadBtn");
+const processAnotherBtn = document.getElementById("processAnotherBtn");
 const navLinks = document.querySelectorAll(".nav-link");
 const methodToggles = document.querySelectorAll(".method-toggle");
 
@@ -42,23 +49,19 @@ function updateActiveNavLink() {
   });
 }
 
-// YouTube URL validation
-function validateYouTubeUrl(url) {
-  const youtubeRegex =
-    /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)[\w-]+/;
-  return youtubeRegex.test(url);
-}
-
-// Extract YouTube video ID from URL
-function extractYouTubeId(url) {
-  const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/;
-  const match = url.match(regex);
-  return match ? match[1] : null;
-}
-
 // File upload handling
 function handleFileUpload(file) {
-  if (!file) return;
+  console.log("handleFileUpload called with:", file);
+  if (!file) {
+    console.log("No file provided");
+    return;
+  }
+
+  console.log("File details:", {
+    name: file.name,
+    type: file.type,
+    size: file.size
+  });
 
   // Validate file type
   const validTypes = [
@@ -69,6 +72,7 @@ function handleFileUpload(file) {
     "video/webm",
   ];
   if (!validTypes.includes(file.type)) {
+    console.log("Invalid file type:", file.type);
     alert("Please upload a valid video file (MP4, MOV, AVI, MKV, or WebM)");
     return;
   }
@@ -76,74 +80,54 @@ function handleFileUpload(file) {
   // Validate file size (max 500MB)
   const maxSize = 500 * 1024 * 1024; // 500MB
   if (file.size > maxSize) {
+    console.log("File too large:", file.size);
     alert("File size must be less than 500MB");
     return;
   }
 
+  console.log("File validation passed, starting processing");
   // Start processing simulation
   startProcessing(file, "file");
 }
 
-// YouTube URL handling
-function handleYouTubeUrl(url) {
+// MP4 URL validation
+function validateMp4Url(url) {
+  const mp4Regex = /\.mp4$/i;
+  const urlRegex = /^https?:\/\/.+/;
+  return urlRegex.test(url) && mp4Regex.test(url);
+}
+
+// MP4 URL handling
+function handleMp4Url(url) {
   if (!url.trim()) {
-    alert("Please enter a YouTube URL");
+    alert("Please enter an MP4 URL");
     return;
   }
 
-  if (!validateYouTubeUrl(url)) {
-    alert(
-      "Please enter a valid YouTube URL (e.g., https://www.youtube.com/watch?v=VIDEO_ID)"
-    );
+  if (!validateMp4Url(url)) {
+    alert("Please enter a valid MP4 URL (must end with .mp4)");
     return;
   }
 
-  const videoId = extractYouTubeId(url);
-  if (!videoId) {
-    alert("Could not extract video ID from URL");
-    return;
-  }
-
-  // Start processing simulation with YouTube data
-  const youtubeData = {
-    url: url,
-    videoId: videoId,
-    title: "YouTube Video", // In real app, this would be fetched from YouTube API
-    duration: "12:34", // In real app, this would be fetched from YouTube API
-    size: "Unknown", // YouTube videos don't have a fixed size
-  };
-
-  startProcessing(youtubeData, "youtube");
+  // Start MP4 processing simulation
+  startMp4Processing(url);
 }
 
 // Simulate video processing
 function startProcessing(data, type) {
-  // Hide upload areas and show processing status
+  // Hide upload area and show processing status
   uploadArea.style.display = "none";
-  youtubeInput.style.display = "none";
   processingStatus.style.display = "block";
   results.style.display = "none";
 
-  // Different processing steps based on type
-  let processingSteps;
-  if (type === "youtube") {
-    processingSteps = [
-      { text: "Downloading YouTube video...", progress: 15 },
-      { text: "Analyzing video content...", progress: 35 },
-      { text: "Identifying key moments...", progress: 55 },
-      { text: "Extracting important segments...", progress: 75 },
-      { text: "Generating summary video...", progress: 90 },
-      { text: "Finalizing output...", progress: 100 },
-    ];
-  } else {
-    processingSteps = [
-      { text: "Analyzing video content...", progress: 20 },
-      { text: "Identifying key moments...", progress: 40 },
-      { text: "Extracting important segments...", progress: 60 },
-      { text: "Generating summary video...", progress: 80 },
-      { text: "Finalizing output...", progress: 100 },
-    ];
-  }
+  // Processing steps for file upload
+  const processingSteps = [
+    { text: "Analyzing video content...", progress: 20 },
+    { text: "Identifying key moments...", progress: 40 },
+    { text: "Extracting important segments...", progress: 60 },
+    { text: "Generating summary video...", progress: 80 },
+    { text: "Finalizing output...", progress: 100 },
+  ];
 
   let currentStep = 0;
 
@@ -165,6 +149,66 @@ function startProcessing(data, type) {
   processStep();
 }
 
+// Simulate MP4 processing
+function startMp4Processing(url) {
+  // Hide upload areas and show MP4 results with loading
+  uploadArea.style.display = "none";
+  mp4UrlInput.style.display = "none";
+  processingStatus.style.display = "none";
+  results.style.display = "none";
+  mp4Results.style.display = "block";
+  mp4ResultsContent.style.display = "none";
+
+  // Simulate processing steps
+  const processingSteps = [
+    { text: "Downloading video from URL...", progress: 20 },
+    { text: "Analyzing video content...", progress: 40 },
+    { text: "Identifying key moments...", progress: 60 },
+    { text: "Generating summary video...", progress: 80 },
+    { text: "Finalizing output...", progress: 100 },
+  ];
+
+  let currentStep = 0;
+
+  const processStep = () => {
+    if (currentStep < processingSteps.length) {
+      const step = processingSteps[currentStep];
+      // Update loading text
+      const loadingText = document.querySelector(".loading-text");
+      if (loadingText) {
+        loadingText.textContent = step.text;
+      }
+      currentStep++;
+      setTimeout(processStep, 2000);
+    } else {
+      // Processing complete - show results
+      setTimeout(() => {
+        showMp4Results(url);
+      }, 1000);
+    }
+  };
+
+  processStep();
+}
+
+// Show MP4 processing results
+function showMp4Results(url) {
+  // Hide loading animation and show results
+  mp4ResultsContent.style.display = "block";
+  
+  // Set up the processed video (using original URL for demo)
+  processedVideo.src = url;
+  
+  // Simulate processed video stats
+  processedDuration.textContent = "3:45";
+  processedSize.textContent = "62 MB";
+  
+  // Scroll to results
+  setTimeout(() => {
+    mp4Results.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 500);
+}
+
 // Show processing results
 function showResults(data, type) {
   processingStatus.style.display = "none";
@@ -178,24 +222,12 @@ function showResults(data, type) {
   );
   const summarySize = document.querySelector(".video-item:nth-child(3) .size");
 
-  // Simulate file info based on type
-  let simulatedDuration,
-    originalSizeValue,
-    summaryDurationValue,
-    summarySizeValue;
-
-  if (type === "youtube") {
-    simulatedDuration = data.duration || "12:34";
-    originalSizeValue = "YouTube Video";
-    summaryDurationValue = "2:15"; // Simulated summary duration
-    summarySizeValue = "45 MB"; // Simulated summary size
-  } else {
-    const fileSizeMB = (data.size / (1024 * 1024)).toFixed(1);
-    simulatedDuration = "15:32"; // This would be extracted from the video
-    originalSizeValue = `${fileSizeMB} MB`;
-    summaryDurationValue = "3:45"; // This would be calculated
-    summarySizeValue = `${(fileSizeMB * 0.25).toFixed(1)} MB`; // Simulate 75% reduction
-  }
+  // Simulate file info
+  const fileSizeMB = (data.size / (1024 * 1024)).toFixed(1);
+  const simulatedDuration = "15:32"; // This would be extracted from the video
+  const originalSizeValue = `${fileSizeMB} MB`;
+  const summaryDurationValue = "3:45"; // This would be calculated
+  const summarySizeValue = `${(fileSizeMB * 0.25).toFixed(1)} MB`; // Simulate 75% reduction
 
   originalDuration.textContent = simulatedDuration;
   originalSize.textContent = originalSizeValue;
@@ -211,13 +243,15 @@ function showResults(data, type) {
 // Reset to upload state
 function resetToUpload() {
   uploadArea.style.display = "block";
-  youtubeInput.style.display = "none";
+  mp4UrlInput.style.display = "none";
   processingStatus.style.display = "none";
   results.style.display = "none";
+  mp4Results.style.display = "none";
+  mp4ResultsContent.style.display = "none";
   progressFill.style.width = "0%";
   videoInput.value = "";
-  youtubeUrl.value = "";
-
+  mp4Url.value = "";
+  
   // Reset method toggle to file upload
   methodToggles.forEach((toggle) => toggle.classList.remove("active"));
   methodToggles[0].classList.add("active");
@@ -230,10 +264,10 @@ function toggleUploadMethod(method) {
 
   if (method === "file") {
     uploadArea.style.display = "block";
-    youtubeInput.style.display = "none";
-  } else {
+    mp4UrlInput.style.display = "none";
+  } else if (method === "mp4-url") {
     uploadArea.style.display = "none";
-    youtubeInput.style.display = "block";
+    mp4UrlInput.style.display = "block";
   }
 }
 
@@ -520,13 +554,20 @@ document.addEventListener("DOMContentLoaded", function () {
   });
   // Upload area click handler
   uploadArea.addEventListener("click", () => {
+    console.log("Upload area clicked");
     videoInput.click();
   });
 
   // File input change handler
   videoInput.addEventListener("change", (e) => {
+    console.log("File input changed", e.target.files);
     const file = e.target.files[0];
-    handleFileUpload(file);
+    if (file) {
+      console.log("File selected:", file.name, file.type, file.size);
+      handleFileUpload(file);
+    } else {
+      console.log("No file selected");
+    }
   });
 
   // Drag and drop handlers
@@ -554,15 +595,15 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  // YouTube URL input handlers
-  youtubeUrl.addEventListener("keypress", (e) => {
+  // MP4 URL input handlers
+  mp4Url.addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
-      handleYouTubeUrl(youtubeUrl.value);
+      handleMp4Url(mp4Url.value);
     }
   });
 
-  processYoutubeBtn.addEventListener("click", () => {
-    handleYouTubeUrl(youtubeUrl.value);
+  processMp4Btn.addEventListener("click", () => {
+    handleMp4Url(mp4Url.value);
   });
 
   // Navigation link handlers
@@ -603,9 +644,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  // Download button handler
+  downloadBtn.addEventListener("click", () => {
+    // In a real app, this would trigger the actual download
+    alert("Download functionality would be implemented here. The processed video would be downloaded.");
+  });
+
+  // Process another button handler
+  processAnotherBtn.addEventListener("click", () => {
+    resetToUpload();
+  });
+
   // Add reset functionality (for demo purposes)
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && results.style.display !== "none") {
+    if (e.key === "Escape" && (results.style.display !== "none" || mp4Results.style.display !== "none")) {
       resetToUpload();
     }
   });
@@ -626,7 +678,7 @@ const observer = new IntersectionObserver((entries) => {
   });
 }, observerOptions);
 
-// Observe mission cards for animation
+// Observe mission cards and team members for animation
 document.addEventListener("DOMContentLoaded", () => {
   const missionCards = document.querySelectorAll(".mission-card");
   missionCards.forEach((card, index) => {
@@ -636,6 +688,17 @@ document.addEventListener("DOMContentLoaded", () => {
       index * 0.1
     }s, transform 0.6s ease ${index * 0.1}s`;
     observer.observe(card);
+  });
+
+  // Animate team members
+  const teamMembers = document.querySelectorAll(".team-member");
+  teamMembers.forEach((member, index) => {
+    member.style.opacity = "0";
+    member.style.transform = "translateY(30px)";
+    member.style.transition = `opacity 0.6s ease ${
+      index * 0.2
+    }s, transform 0.6s ease ${index * 0.2}s`;
+    observer.observe(member);
   });
 });
 
