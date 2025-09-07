@@ -180,4 +180,4 @@ MIT License - Feel free to use and modify for your projects!
 
 ---
 
-*Created with ❤️ during the Google Nano Banana Hackathon 2025 in San Francisco*
+*Created during the Google Nano Banana Hackathon 2025 in San Francisco*
