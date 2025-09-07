@@ -162,13 +162,6 @@ In-Transit uses a modular architecture with three main components:
 
 Each layer is optimized for quality and performance, with graceful fallbacks and error handling.
 
-## 🎯 Hackathon Judging Criteria Achievement
-
-- **✨ Innovation & Wow Factor (40%)**: Novel use of Nano Banana for video transition generation
-- **⚙️ Technical Execution (30%)**: Robust pipeline with multiple AI services integration
-- **🌍 Impact & Utility (20%)**: Solves real content creation challenges for educators and creators
-- **🎤 Presentation Quality (10%)**: Clear documentation and example demonstrations
-
 ## 🚧 Future Enhancements
 
 - 🌐 Web interface for easier video processing
