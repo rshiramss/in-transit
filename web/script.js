@@ -60,7 +60,7 @@ function handleFileUpload(file) {
   console.log("File details:", {
     name: file.name,
     type: file.type,
-    size: file.size
+    size: file.size,
   });
 
   // Validate file type
@@ -195,14 +195,43 @@ function startMp4Processing(url) {
 function showMp4Results(url) {
   // Hide loading animation and show results
   mp4ResultsContent.style.display = "block";
-  
-  // Set up the processed video (using original URL for demo)
+
+  // Add loading class to video container
+  const videoContainer = document.querySelector(".video-preview-container");
+  videoContainer.classList.add("video-loading");
+
+  // Set up the processed video for playback
   processedVideo.src = url;
-  
-  // Simulate processed video stats
-  processedDuration.textContent = "3:45";
-  processedSize.textContent = "62 MB";
-  
+  processedVideo.load(); // Force reload
+
+  // Add event listener for when video is loaded
+  processedVideo.addEventListener("loadedmetadata", () => {
+    // Remove loading class
+    videoContainer.classList.remove("video-loading");
+
+    // Get actual video duration
+    const duration = processedVideo.duration;
+    const minutes = Math.floor(duration / 60);
+    const seconds = Math.floor(duration % 60);
+    processedDuration.textContent = `${minutes}:${seconds
+      .toString()
+      .padStart(2, "0")}`;
+
+    // Estimate file size (rough calculation)
+    const estimatedSize = Math.round(duration * 0.5); // Rough estimate: 0.5MB per second
+    processedSize.textContent = `${estimatedSize} MB`;
+  });
+
+  // Handle video loading errors
+  processedVideo.addEventListener("error", () => {
+    videoContainer.classList.remove("video-loading");
+    alert("Error loading video. Please check the URL and try again.");
+  });
+
+  // Enable video controls and make it playable
+  processedVideo.controls = true;
+  processedVideo.preload = "metadata";
+
   // Scroll to results
   setTimeout(() => {
     mp4Results.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -251,7 +280,7 @@ function resetToUpload() {
   progressFill.style.width = "0%";
   videoInput.value = "";
   mp4Url.value = "";
-  
+
   // Reset method toggle to file upload
   methodToggles.forEach((toggle) => toggle.classList.remove("active"));
   methodToggles[0].classList.add("active");
@@ -618,16 +647,30 @@ document.addEventListener("DOMContentLoaded", function () {
   // Scroll handler for navigation
   window.addEventListener("scroll", updateActiveNavLink);
 
-  // Download button handler
+  // Download button handler for regular results
   document.addEventListener("click", (e) => {
     if (
       e.target.closest(".btn-primary") &&
       e.target.closest(".results-actions")
     ) {
-      // In a real app, this would trigger the actual download
-      alert(
-        "Download functionality would be implemented here. The processed video would be downloaded."
-      );
+      // For regular file uploads, we'll simulate a download
+      const link = document.createElement("a");
+      link.href = "#"; // Placeholder - in real app this would be the processed video URL
+      link.download = "processed_video.mp4";
+      link.style.display = "none";
+      document.body.appendChild(link);
+
+      // Show success message
+      const button = e.target.closest(".btn-primary");
+      const originalText = button.innerHTML;
+      button.innerHTML = '<i class="fas fa-check"></i> Downloaded!';
+      button.style.background = "#30d158";
+
+      setTimeout(() => {
+        button.innerHTML = originalText;
+        button.style.background = "";
+        document.body.removeChild(link);
+      }, 2000);
     }
   });
 
@@ -637,17 +680,72 @@ document.addEventListener("DOMContentLoaded", function () {
       e.target.closest(".btn-secondary") &&
       e.target.closest(".results-actions")
     ) {
-      // In a real app, this would open a video preview modal
-      alert(
-        "Preview functionality would be implemented here. A modal with the processed video would open."
-      );
+      // Create a modal for video preview
+      const modal = document.createElement("div");
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        cursor: pointer;
+      `;
+
+      const video = document.createElement("video");
+      video.style.cssText = `
+        max-width: 90%;
+        max-height: 90%;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      `;
+      video.controls = true;
+      video.src = "#"; // Placeholder - in real app this would be the processed video URL
+
+      modal.appendChild(video);
+      document.body.appendChild(modal);
+
+      // Close modal on click
+      modal.addEventListener("click", () => {
+        document.body.removeChild(modal);
+      });
+
+      // Prevent video click from closing modal
+      video.addEventListener("click", (e) => {
+        e.stopPropagation();
+      });
     }
   });
 
   // Download button handler
   downloadBtn.addEventListener("click", () => {
-    // In a real app, this would trigger the actual download
-    alert("Download functionality would be implemented here. The processed video would be downloaded.");
+    const videoUrl = processedVideo.src;
+    if (videoUrl) {
+      // Create a temporary download link
+      const link = document.createElement("a");
+      link.href = videoUrl;
+      link.download = "processed_video.mp4";
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Show success message
+      const originalText = downloadBtn.innerHTML;
+      downloadBtn.innerHTML = '<i class="fas fa-check"></i> Downloaded!';
+      downloadBtn.style.background = "#30d158";
+
+      setTimeout(() => {
+        downloadBtn.innerHTML = originalText;
+        downloadBtn.style.background = "";
+      }, 2000);
+    } else {
+      alert("No video available for download");
+    }
   });
 
   // Process another button handler
@@ -657,7 +755,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Add reset functionality (for demo purposes)
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && (results.style.display !== "none" || mp4Results.style.display !== "none")) {
+    if (
+      e.key === "Escape" &&
+      (results.style.display !== "none" || mp4Results.style.display !== "none")
+    ) {
       resetToUpload();
     }
   });

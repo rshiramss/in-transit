@@ -1030,7 +1030,9 @@ body {
 }
 
 @keyframes loaderPulse {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0);
     opacity: 0.5;
   }
@@ -1098,6 +1100,46 @@ body {
   height: auto;
   display: block;
   border-radius: var(--radius-xl);
+  background: var(--background-secondary);
+  border: 2px solid var(--border-color);
+}
+
+.processed-video::-webkit-media-controls-panel {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.processed-video::-webkit-media-controls-play-button,
+.processed-video::-webkit-media-controls-volume-slider,
+.processed-video::-webkit-media-controls-timeline {
+  background: var(--primary-color);
+}
+
+.video-loading {
+  position: relative;
+}
+
+.video-loading::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  z-index: 10;
+}
+
+@keyframes spin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 
 .video-overlay-info {
