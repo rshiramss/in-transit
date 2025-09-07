@@ -267,20 +267,12 @@ def main():
             from text_process import TranscriptProcessor, run_video_cutter
             
             try:
-                # Initialize text processor
-                processor = TranscriptProcessor()
-                
-                # Process the SRT file to create a coherent version
-                output_transcript = final_path.replace('.srt', '_coherent.srt')
-                coherent_path = processor.process_srt_file(final_path, output_transcript)
-                print(f"Text processing completed: {coherent_path}")
-                
-                # Automatically run video cutter with the processed transcript
+                # Automatically run video cutter with the condensed transcript (skip the coherent processing)
                 print("\n" + "="*50)
                 print("🎬 Starting Video Processing...")
                 print("="*50)
                 
-                run_video_cutter(args.video, coherent_path, amt_fps=8, amt_passes=1)
+                run_video_cutter(args.video, final_path, amt_fps=8, amt_passes=1)
                 
             except Exception as e:
                 print(f"Error in processing pipeline: {e}")
