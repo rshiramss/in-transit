@@ -1074,12 +1074,17 @@ def main():
         
         base_name = os.path.splitext(os.path.basename(args.video))[0]
         
+        # Save output to media folder
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(script_dir)
+        media_dir = os.path.join(project_root, "media")
+        
         if args.mode == 'jumpcut':
-            output_filename = f"condensed_{base_name}_jumpcut.mp4"
+            output_filename = os.path.join(media_dir, f"condensed_{base_name}_jumpcut.mp4")
             success = cutter.create_condensed_video(output_filename)
         
         elif args.mode == 'seamless':
-            output_filename = f"condensed_{base_name}_seamless.mp4"
+            output_filename = os.path.join(media_dir, f"condensed_{base_name}_seamless.mp4")
             success = cutter.create_seamless_video(
                 output_filename, 
                 align_frames=(not args.no_align),

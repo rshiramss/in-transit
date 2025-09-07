@@ -123,12 +123,23 @@ in-transit/
 
 ## 🎬 Example Output
 
-Check out our example processing of a Greek Financial Crisis educational video:
+**🔥 [Download the example video: `media/condensed_GreekFinCrisis_seamless.mp4`](./media/condensed_GreekFinCrisis_seamless.mp4)**
 
-- **📹 Original**: `media/GreekFinCrisis.mp4` (8-minute educational video)
-- **✨ Processed**: `media/condensed_GreekFinCrisis_seamless.mp4` (2 minutes with AI transitions)
-- **📊 Compression**: 75% reduction in length while preserving key information
-- **🔄 Transitions**: 12 seamless AI-generated transitions using Nano Banana + Fal AI AMT
+This demonstrates our complete pipeline processing a Greek Financial Crisis educational video:
+
+- **📹 Original**: 8-minute educational video about the Greek Financial Crisis
+- **✨ Processed**: **2-minute condensed version** with seamless AI transitions
+- **📊 Compression**: **75% reduction** in length while preserving key information
+- **🔄 AI Magic**: 12 seamless transitions generated using:
+  - 🍌 **Nano Banana**: Intelligent intermediate frame generation
+  - 🔄 **Fal AI AMT**: Advanced frame interpolation
+  - 🤖 **Gemini AI**: Content analysis for optimal segment selection
+
+**Try it yourself:**
+```bash
+cd scripts
+python transcription_service.py --video GreekFinCrisis.mp4
+```
 
 The processed video demonstrates how In-Transit intelligently identifies the most important segments of educational content and creates smooth transitions that maintain narrative flow.
 
