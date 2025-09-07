@@ -8,6 +8,9 @@ import os
 import re
 import json
 import time
+import subprocess
+import sys
+import argparse
 from typing import List, Dict, Tuple
 import google.generativeai as genai
 from datetime import datetime
@@ -539,6 +542,16 @@ class TranscriptProcessor:
 
 def main():
     """Main function to run the transcript processor."""
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Process transcript and create seamless video")
+    parser.add_argument("--video", required=True, help="Video file name (should be in media/ folder)")
+    parser.add_argument("--transcript", default="../output/transcript.srt", help="Input transcript file path")
+    parser.add_argument("--output-transcript", default="../output/transcript_coherent.srt", help="Output processed transcript path")
+    parser.add_argument("--amt-fps", type=int, default=8, help="AMT transition FPS (1-60, lower = shorter)")
+    parser.add_argument("--amt-passes", type=int, default=1, help="AMT interpolation passes (1-10, fewer = shorter)")
+    
+    args = parser.parse_args()
+    
     # Check for API key (now loaded from .env file)
     api_key = os.getenv('GEMINI_API_KEY')
     if not api_key:
@@ -554,16 +567,86 @@ def main():
         return
     
     # Process SRT file with improved algorithm
-    input_file = "../output/transcript.srt"
+    input_file = args.transcript
     if not os.path.exists(input_file):
         print(f"Error: {input_file} not found. Please run transcription first.")
         return
     
     try:
-        output_file = processor.process_srt_file(input_file, "../output/transcript_coherent.srt")
+        output_file = processor.process_srt_file(input_file, args.output_transcript)
         print(f"\nCoherent condensed transcript saved to: {output_file}")
+        
+        # After successful text processing, automatically run video cutter
+        print("\n" + "="*50)
+        print("🎬 Starting Video Processing...")
+        print("="*50)
+        
+        run_video_cutter(args.video, output_file, args.amt_fps, args.amt_passes)
+        
     except Exception as e:
         print(f"Error processing transcript: {e}")
+
+def run_video_cutter(video_filename: str, transcript_file: str, amt_fps: int = 8, amt_passes: int = 1):
+    """
+    Automatically run video_cutter2.py after text processing is complete.
+    
+    Args:
+        video_filename: Name of video file (should be in media/ folder)
+        transcript_file: Path to the processed transcript file
+        amt_fps: FPS for AMT transitions
+        amt_passes: Number of interpolation passes
+    """
+    try:
+        # Get the project root directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(script_dir)
+        
+        # Check for video file in media directory
+        media_dir = os.path.join(project_root, "media")
+        video_path = os.path.join(media_dir, video_filename)
+        
+        if not os.path.exists(video_path):
+            print(f"Error: Video file not found at {video_path}")
+            print(f"Please ensure {video_filename} is in the media/ folder")
+            return
+            
+        # Check if video_cutter2.py exists
+        video_cutter_path = os.path.join(script_dir, "video_cutter2.py")
+        if not os.path.exists(video_cutter_path):
+            print(f"Error: video_cutter2.py not found at {video_cutter_path}")
+            return
+            
+        print(f"Using video file: {video_path}")
+        print(f"Using transcript: {transcript_file}")
+        print(f"AMT settings: FPS={amt_fps}, passes={amt_passes}")
+        
+        # Construct the command to run video_cutter2.py
+        cmd = [
+            sys.executable, 
+            video_cutter_path,
+            "--mode", "seamless",
+            "--video", video_path,
+            "--transcript", transcript_file,
+            "--amt-fps", str(amt_fps),
+            "--amt-passes", str(amt_passes)
+        ]
+        
+        print(f"Running command: {' '.join(cmd)}")
+        print("This may take several minutes depending on video length...")
+        
+        # Run the video cutter
+        result = subprocess.run(cmd, cwd=script_dir, capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            print("✅ Video processing completed successfully!")
+            print(result.stdout)
+        else:
+            print("❌ Video processing failed!")
+            print("STDOUT:", result.stdout)
+            print("STDERR:", result.stderr)
+            
+    except Exception as e:
+        print(f"Error running video cutter: {e}")
 
 if __name__ == "__main__":
     main()

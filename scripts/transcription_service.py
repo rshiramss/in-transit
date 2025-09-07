@@ -2,6 +2,7 @@ import os
 import requests
 import json
 import re
+import argparse
 from typing import Optional, Dict, Any, List, Tuple
 from pathlib import Path
 from dotenv import load_dotenv
@@ -218,31 +219,76 @@ class ElevenLabsTranscriptionService:
 
 def main():
     """
-    Example usage of the ElevenLabsTranscriptionService.
+    Transcribe video files using ElevenLabsTranscriptionService.
     """
-    # Example usage
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Transcribe video files using ElevenLabs API")
+    parser.add_argument("--video", required=True, help="Video file name (should be in media/ folder)")
+    parser.add_argument("--output", default="../output/transcript.srt", help="Output transcript file path")
+    parser.add_argument("--language", default="en", help="Language code for transcription (default: en)")
+    parser.add_argument("--no-condensing", action="store_true", help="Disable automatic transcript condensing")
+    
+    args = parser.parse_args()
+    
     try:
         # Initialize the service (make sure to set ELEVENLABS_API_KEY environment variable)
-        service = ElevenLabsTranscriptionService()
+        service = ElevenLabsTranscriptionService(enable_condensing=not args.no_condensing)
         
-        # Example: Transcribe a video file
-        video_path = "../media/GreekFinCrisis.mp4"  # Replace with your video file path
+        # Build video path from media folder
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(script_dir)
+        video_path = os.path.join(project_root, "media", args.video)
+        
         if os.path.exists(video_path):
             print(f"Transcribing video: {video_path}")
-            result = service.transcribe_video(video_path)
+            print(f"Language: {args.language}")
+            print(f"Condensing enabled: {not args.no_condensing}")
+            
+            result = service.transcribe_video(video_path, language=args.language)
             print("Transcription completed!")
-            print(f"Text: {result.get('text', 'No text found')}")
+            print(f"Text: {result.get('text', 'No text found')[:200]}...")
             
             # Save transcript as SRT (and create condensed version if enabled)
-            final_path = service.save_transcript(result, "../output/transcript.srt")
+            final_path = service.save_transcript(result, args.output)
             
-            if final_path != "../output/transcript.srt":
+            if final_path != args.output:
                 print("Condensed transcript created with 25% of most important content!")
+                print(f"Condensed transcript saved to: {final_path}")
             else:
                 print("Original transcript saved as SRT file!")
+                print(f"Transcript saved to: {final_path}")
+                
+            # Automatically continue to text processing and video cutting pipeline
+            print("\n" + "="*50)
+            print("🔄 Starting Text Processing Pipeline...")
+            print("="*50)
+            
+            # Import and run the text processing pipeline
+            from text_process import TranscriptProcessor, run_video_cutter
+            
+            try:
+                # Initialize text processor
+                processor = TranscriptProcessor()
+                
+                # Process the SRT file to create a coherent version
+                output_transcript = final_path.replace('.srt', '_coherent.srt')
+                coherent_path = processor.process_srt_file(final_path, output_transcript)
+                print(f"Text processing completed: {coherent_path}")
+                
+                # Automatically run video cutter with the processed transcript
+                print("\n" + "="*50)
+                print("🎬 Starting Video Processing...")
+                print("="*50)
+                
+                run_video_cutter(args.video, coherent_path, amt_fps=8, amt_passes=1)
+                
+            except Exception as e:
+                print(f"Error in processing pipeline: {e}")
+                print("The transcription was successful, but the processing pipeline failed.")
+                
         else:
             print(f"Video file not found: {video_path}")
-            print("Please provide a valid video file path.")
+            print(f"Please ensure {args.video} is in the media/ folder.")
             
     except Exception as e:
         print(f"Error: {str(e)}")

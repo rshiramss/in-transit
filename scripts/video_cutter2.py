@@ -390,6 +390,46 @@ def run_fal_video_generation(image_url: str, out_mp4: str, prompt: str):
     
     download_to(video_url, out_mp4)
 
+def run_fal_amt_interpolation(start_url: str, end_url: str, out_mp4: str, *,
+                             output_fps: int = 12, 
+                             recursive_interpolation_passes: int = 2):
+    """
+    Run Fal AI AMT frame interpolation for short, seamless transitions.
+    
+    Args:
+        start_url: URL or path to first frame
+        end_url: URL or path to second frame  
+        out_mp4: Output path for generated video
+        output_fps: Frames per second (1-60, lower = shorter duration)
+        recursive_interpolation_passes: Interpolation passes (1-10, fewer = shorter)
+    """
+    # Ensure URLs are properly formatted
+    start_url = ensure_url(start_url) if not start_url.startswith('http') else start_url
+    end_url = ensure_url(end_url) if not end_url.startswith('http') else end_url
+    
+    args = {
+        "frames": [
+            {"url": start_url},
+            {"url": end_url}
+        ],
+        "output_fps": output_fps,
+        "recursive_interpolation_passes": recursive_interpolation_passes
+    }
+    
+    print(f"    [AMT] Running frame interpolation with FPS={output_fps}, passes={recursive_interpolation_passes}")
+    result = fal_client.subscribe(
+        "fal-ai/amt-interpolation/frame-interpolation",
+        arguments=args,
+        with_logs=True,
+    )
+    
+    video_url = (result.get("video") or {}).get("url")
+    if not video_url:
+        raise RuntimeError(f"No video URL in fal response: {result}")
+    
+    download_to(video_url, out_mp4)
+    print(f"    [AMT] Saved interpolated video: {out_mp4}")
+
 def generate_fal_transition_clip(frame_a_path: str, frame_b_path: str, nano_path: str, 
                                 temp_video_base: str, target_specs: VideoSpecs) -> Optional[VideoFileClip]:
     """
@@ -426,6 +466,53 @@ def generate_fal_transition_clip(frame_a_path: str, frame_b_path: str, nano_path
 
     except Exception as e:
         print(f"  Error: FAL AI TRANSITION FAILED: {e}")
+        traceback.print_exc()
+        return None
+
+def generate_amt_transition_clip(frame_a_path: str, frame_b_path: str,
+                                temp_video_base: str, target_specs: VideoSpecs,
+                                output_fps: int = 8, passes: int = 1) -> Optional[VideoFileClip]:
+    """
+    Generate short, seamless AI transition clip using AMT frame interpolation.
+    
+    Args:
+        frame_a_path: Path to first frame
+        frame_b_path: Path to second frame
+        temp_video_base: Base name for temp files
+        target_specs: Video specifications for normalization
+        output_fps: FPS for transition (lower = shorter duration)
+        passes: Interpolation passes (fewer = shorter transition)
+    """
+    print(f"  [AMT] Generating short seamless transition...")
+    try:
+        # Define temp output path
+        amt_video_path = temp_video_base + "_amt_transition.mp4"
+        
+        # Generate AMT interpolation video
+        print(f"    [AMT] Creating frame interpolation (FPS: {output_fps}, passes: {passes})...")
+        run_fal_amt_interpolation(
+            start_url=frame_a_path,
+            end_url=frame_b_path, 
+            out_mp4=amt_video_path,
+            output_fps=output_fps,
+            recursive_interpolation_passes=passes
+        )
+
+        # Load and normalize the AMT-generated clip
+        if not os.path.exists(amt_video_path):
+            raise FileNotFoundError("AMT interpolation failed to generate video.")
+            
+        print("    [AMT] Loading and normalizing AMT transition...")
+        raw_clip = VideoFileClip(amt_video_path)
+        
+        # CRITICAL: Normalize the AMT transition clip to match target specs
+        normalized_clip = normalize_clip(raw_clip, target_specs, is_transition=True)
+        
+        print("    Success: AMT Transition generated and normalized.")
+        return normalized_clip
+
+    except Exception as e:
+        print(f"  Error: AMT TRANSITION FAILED: {e}")
         traceback.print_exc()
         return None
 
@@ -785,7 +872,9 @@ class VideoCutter:
 
     def create_seamless_video(self, output_filename: str = "seamless_video.mp4", 
                             transition_size: Optional[Tuple[int, int]] = None, 
-                            align_frames: bool = True) -> bool:
+                            align_frames: bool = True,
+                            amt_fps: int = 8,
+                            amt_passes: int = 1) -> bool:
         """
         *** SEAMLESS WORKFLOW WITH NORMALIZATION ***
         Creates a video with AI transitions, all properly normalized.
@@ -859,9 +948,11 @@ class VideoCutter:
                  print("  Error: Nanobanana frame not created. Skipping Fal AI generation.")
                  continue
 
-            # Generate normalized AI transition
-            transition_clip = generate_fal_transition_clip(
-                frame_a_path, frame_b_path, nano_path, trans_video_base, self.target_specs
+            # Generate normalized AI transition using AMT interpolation for shorter, seamless transitions
+            transition_clip = generate_amt_transition_clip(
+                frame_a_path, frame_b_path, trans_video_base, self.target_specs,
+                output_fps=amt_fps,   # Configurable FPS for duration control
+                passes=amt_passes     # Configurable passes for seamlessness/speed balance
             )
 
             if transition_clip:
@@ -940,6 +1031,18 @@ def main():
         action="store_true",
         help="Disable frame alignment for Nanobanana (faster, less accurate)"
     )
+    parser.add_argument(
+        '--amt-fps',
+        type=int,
+        default=8,
+        help="AMT transition FPS (1-60, lower = shorter duration, default: 8)"
+    )
+    parser.add_argument(
+        '--amt-passes',
+        type=int,
+        default=1,
+        help="AMT interpolation passes (1-10, fewer = shorter transition, default: 1)"
+    )
     args = parser.parse_args()
 
     # Find transcript file
@@ -979,7 +1082,9 @@ def main():
             output_filename = f"condensed_{base_name}_seamless.mp4"
             success = cutter.create_seamless_video(
                 output_filename, 
-                align_frames=(not args.no_align)
+                align_frames=(not args.no_align),
+                amt_fps=args.amt_fps,
+                amt_passes=args.amt_passes
             )
             
         elif args.mode == 'manualcut':

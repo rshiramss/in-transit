@@ -54,8 +54,11 @@ Thumbs.db
 transcribed_text.txt
 transcribed_text_cleaned.txt
 transcript.srt
+transcript_*.srt
 video_*.mp4
 *.log
+output/*.srt
+temp_transitions/
 
 # Archive folder (keep structure but ignore contents)
 archive/*
