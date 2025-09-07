@@ -1,7 +1,5 @@
 # In-Transit 🎬✨
 
-**Winner of the Google Nano Banana Hackathon 2025**
-
 An AI-powered video processing pipeline that transforms long-form content into engaging, condensed videos with seamless AI transitions. Built for the Google Nano Banana Hackathon in San Francisco (September 6-7, 2025).
 
 ## 🏆 Hackathon Achievement
