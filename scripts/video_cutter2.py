@@ -249,6 +249,7 @@ def ensure_url(path_or_url: str) -> str:
 
 def download_to(url: str, out_path: str):
     """Downloads a public URL to a local path."""
+    import requests
     print(f"    [Fal AI] Downloading result to: {os.path.basename(out_path)}...")
     try:
         # Use requests instead of urlretrieve to handle SSL certificates properly
